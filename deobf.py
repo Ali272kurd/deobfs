@@ -1,3 +1,4 @@
+[source: 3]
 import sys
 import re
 import base64
@@ -1381,11 +1382,29 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+DEOBF_TRIGGERS = (
+    "!deobf", ".deobf",
+    ".moonsecv3deobf", "msdeobf", "moonsecdeobf",
+    ".ironbrew2deobf", "ib2deobf", "ironbrewdeobf",
+    ".ironveildeobf", "irvdeobf",
+    ".prometheusdeobf", "promdeobf",
+    ".herculesdeobf", "hercdeobf",
+    ".wearedevsdeobf", "wd",
+    ".luaobfuscatordeobf", "luaobfdeobf", "luaobf",
+    ".lennyobfdeobf", "lendeobf",
+    ".aztupbrewdeobf", "aztbrewdeobf",
+    ".clvbrewdeobf", "cbrewdeobf",
+    ".goofyscatordeobf", "goofyscator",
+    ".zkowebismdeobf", "obfzkodeobf", "webismdeobf",
+    ".clydedeobf",
+    ".hide.latdeobf", "hidelatdeobf", "latdeobf", "hlatdeobf",
+    ".encryptxdeobf"
+)
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     
-    # Send !BOT ON @all when successfully running
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
@@ -1400,7 +1419,50 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    if message.content.strip().startswith("!deobf"):
+    content_lower = message.content.strip().lower()
+
+    if content_lower.startswith("!l"):
+        if message.attachments:
+            attachment = message.attachments[0]
+            try:
+                file_bytes = await attachment.read()
+                code = file_bytes.decode('utf-8', errors='ignore')
+                
+                polymorphism = Polymorphism_Reverse()
+                processed_code = polymorphism.reverse_polymorphism(code)
+                
+                if not processed_code or "Failed" in processed_code:
+                    await message.reply(f"{message.author.mention} Auto-deobf failed on this protection scheme.")
+                    return
+
+                analyzer = CodeAnalyzer()
+                analysis_report = analyzer.analyze_code(processed_code)
+
+                output_name = attachment.filename
+                if not output_name.endswith(".lua"):
+                    output_name += "_auto_deobf.lua"
+                else:
+                    output_name = output_name.replace(".lua", "_auto_deobf.lua")
+                    
+                with open(output_name, "w", encoding="utf-8") as f:
+                    f.write(processed_code)
+                    
+                with open(output_name, "rb") as f:
+                    discord_file = discord.File(f, filename=output_name)
+                    await message.reply(
+                        f"🛡️ **Auto Deobf & Check Results for {message.author.mention}**:\n```yaml\n{analysis_report[:1500]}\n```",
+                        file=discord_file
+                    )
+                    
+                if os.path.exists(output_name):
+                    os.remove(output_name)
+            except Exception as e:
+                await message.reply(f"{message.author.mention} Error during auto-deobf: {str(e)}")
+        else:
+            await message.reply(f"{message.author.mention} Please attach a file with the `!L` command for auto deobf and check.")
+        return
+
+    if any(content_lower.startswith(trigger) for trigger in DEOBF_TRIGGERS):
         if message.attachments:
             attachment = message.attachments[0]
             try:
@@ -1433,7 +1495,7 @@ async def on_message(message):
             except Exception as e:
                 await message.reply(f"{message.author.mention} it doesnt work on this type of method to deobfuscate")
         else:
-            await message.reply(f"{message.author.mention} Please attach a file with the `!deobf` command.")
+            await message.reply(f"{message.author.mention} Please attach a file with your deobfuscation command.")
 
     await bot.process_commands(message)
 
@@ -1442,7 +1504,6 @@ if __name__ == "__main__":
     lock_file = "bot_runtime.lock"
     current_time = time.time()
     
-    # Check if the bot was executed within the last 24 hours (86400 seconds)
     if os.path.exists(lock_file):
         with open(lock_file, "r") as f:
             try:
@@ -1453,7 +1514,6 @@ if __name__ == "__main__":
             except ValueError:
                 pass
 
-    # Update lock file with current timestamp
     with open(lock_file, "w") as f:
         f.write(str(current_time))
 
@@ -1476,6 +1536,5 @@ if __name__ == "__main__":
         except IOError as e:
             print(f"Error writing output: {str(e)}")
     else:
-        # Run bot using your token here
         TOKEN = "MTUxMTg4MzcwOTc5MDQyMTA2Mg.GUKmzH.Y0zAUWI0KKro0qT3B3YU-TXAgQyLUhma6PK_vw"
         bot.run(TOKEN)
