@@ -1477,5 +1477,5 @@ if __name__ == "__main__":
             print(f"Error writing output: {str(e)}")
     else:
         # Run bot using your token here
-        TOKEN = "https://discord.com/api/webhooks/1519917180446052386/2vEfZt8Ijlla1c2Oux7FhIIzHE7VcOQsRPOfLrmN9v_2BKTcEphLRph8ky85-oNGZoPV"
+        TOKEN = "MTUxMTg4MzcwOTc5MDQyMTA2Mg.GUKmzH.Y0zAUWI0KKro0qT3B3YU-TXAgQyLUhma6PK_vw"
         bot.run(TOKEN)
